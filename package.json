@@ -1,0 +1,22 @@
+{
+  "name": "imageoptimizer",
+  "version": "1.0.0",
+  "description": "Bulk optimize images for web <picture> sources",
+  "main": "main.js",
+  "scripts": {
+    "shrinkimgs": "node dev/convertImages.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jwrunge/image-optimizer.git"
+  },
+  "author": "Jake Runge",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jwrunge/image-optimizer/issues"
+  },
+  "homepage": "https://github.com/jwrunge/image-optimizer#readme",
+  "devDependencies": {
+    "sharp": "^0.23.4"
+  }
+}
