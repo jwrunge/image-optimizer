@@ -4,18 +4,20 @@ let fs = require('fs')
 
 // List all files in a directory in Node.js recursively in a synchronous fashion
 function walkSync(dir, filelist, rootDir = dir) {
-    var fs = fs || require('fs'),
-        files = fs.readdirSync(dir)
+    let files = fs.readdirSync(dir)
     filelist = filelist || []
-    files.forEach(function(file) {
-        if (fs.statSync(dir + file).isDirectory()) {
-            filelist = walkSync(dir + file + '/', filelist, rootDir)
+
+    for(let file of files) {
+        let filepath = path.join(dir, file)
+        if (fs.statSync(filepath).isDirectory()) {
+            filelist = walkSync(filepath, filelist, rootDir)
         }
         else {
-            var shortdir = dir.replace(rootDir, '')
-            filelist.push(shortdir + file)
+            let shortdir = dir.replace(rootDir, '')
+            filelist.push(path.join(shortdir, file))
         }
-    })
+    }
+
     return filelist
 }
 
@@ -54,20 +56,32 @@ export function createOptimizationFolders(destination, imageFolder, breakpoints)
         let fullName = path.basename(images[i])
         let shortPath = images[i].replace(fullName, "")
     
-        if(imgExt != '.svg') {
+        if(['.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff'].includes(imgExt.toLowerCase())) {
             //Cycle through output folders
-            for(let j = 0; j < directories.length; j++) {
+            for(let j = 0; j < breakpoints.length; j++) {
                 //Create the new directory if it does not exist
-                if(!fs.existsSync(path.join(destination, directories[j].dir, shortPath)))
-                    fs.mkdirSync(path.join(destination, directories[j].dir, shortPath), { recursive: true })
+                if(!fs.existsSync(path.join(breakpoints[j].dir, shortPath)))
+                    fs.mkdirSync(path.join(breakpoints[j].dir, shortPath), { recursive: true })
     
-                sharp(path.join(sourceFolder, images[i]))
-                    .resize({ width: directories[j].size, withoutEnlargement: true })
-                    .toFile(path.join(destination, directories[j].dir, shortPath, fileName, ".webp"),
-                    (err, info)=> {
-                        if(err) console.log(err)
-                    })
+                let outputPath = path.join(breakpoints[j].dir, shortPath, fileName + ".webp")
+                let originalFileUpdated = fs.statSync(path.join(sourceFolder, images[i])).mtime
+                let newFileUpdated = fs.statSync(outputPath).mtime
+                
+                if(!fs.existsSync(outputPath) || originalFileUpdated > newFileUpdated) {
+                    sharp(path.join(sourceFolder, images[i]))  
+                        .rotate()
+                        .resize({ width: breakpoints[j].size, withoutEnlargement: true })
+                        .webp()
+                        .toFile(outputPath,
+                        (err, info)=> {
+                            if(err) console.log(images[i] + ": " + err)
+                        })
+                }
+                else console.log('Skipping existing file ' + path.join(breakpoints[j].dir, shortPath, fileName + ".webp"))
             }
+        }
+        else {
+            console.log("Could not process " + image[i] + ": filetype not supported.")
         }
     }
 }
